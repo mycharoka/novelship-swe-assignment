@@ -1,7 +1,13 @@
 const repo = require('./repository')
+const redis = require('redis')
 
 async function getFibonacciIdx(req, res) {
   const {index} = req.params
+  let client = redis.createClient(process.env.REDIS_PORT)
+
+  client.on('error', error => {
+    console.error(`Redis error : ${error}`)
+  })
 
   let config = {
     baseUrl: `${req.baseUrl.toString()}`,
@@ -10,7 +16,9 @@ async function getFibonacciIdx(req, res) {
   }
   try { 
     let result = fibonacci(index)
-    await repo.insertReqLog(config, index, result)
+
+    client.setex("fibIndex", 3600, result)
+    
     return res.json({
       status: 'success',
       result
